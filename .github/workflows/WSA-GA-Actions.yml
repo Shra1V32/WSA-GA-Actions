@@ -1,0 +1,79 @@
+name: WSA-GA-Actions
+on:
+ workflow_dispatch:
+  inputs:
+    msixbundle_url:
+      description: 'Enter the URL of your Msix Bundle'     
+      required: true
+    gapps_url:
+      description: 'Enter your GApps URL (Make sure you choose from the correct architecture)'
+      required: true
+    architecture:
+      description: 'Your Windows Architecture (x64 is the default, if ARM64 then write "arm64" here) '
+      required: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Workflow Run
+      run: |
+            git clone https://github.com/WSA-Community/WSAGAScript
+            cd WSAGAScript/#GAPPS
+            sudo apt install axel >> /dev/null 2>&1
+            echo "Downloading Gapps..."
+            axel -n 10 "${{ github.event.inputs.gapps_url }}" >> /dev/null 2>&1
+            gapps_type=$(ls | grep "gapps")
+            gapps_type=${gapps_type##*11.0-}
+            gapps_type=${gapps_type%-*}
+            cd ..
+            sudo apt install lzip
+            cd ..
+            echo "Downloading WSA Bundle..."
+            axel -n 10 "${{ github.event.inputs.msixbundle_url }}" >> /dev/null 2>&1
+            version=$(ls | grep "Msixbundle")
+            version=${version##*Android_}
+            version=${version%_neutral*}
+            7z x $(ls | grep "Msixbundle") -oBundle_Unzip || echo " " >> /dev/null
+            cd Bundle_Unzip/
+            arch="${{github.event.inputs.architecture}}"
+            if [ "${arch,,}" == "arm64" ]; then
+              7z x $(ls | grep "ARM64") -omain || echo " " >> /dev/null
+              cd main/
+              mv *.img ../../WSAGAScript/#IMAGES
+              cd ../../WSAGAScript/
+              sed -i 's/x64/arm64/g' VARIABLES.sh
+              chmod 755 *.sh
+              ./extract_gapps_pico.sh
+              sudo ./extend_and_mount_images.sh
+              sudo ./apply.sh
+              sudo ./unmount_images.sh
+              mv \#IMAGES/*.img ../Bundle_Unzip/main/
+              cd ../Bundle_Unzip/main/
+              chmod 777 *.img
+              rm -rf AppxMetadata AppxBlockMap.xml AppxSignature.p7x "[Content_Types].xml"
+              name="WsaRelease-$version-GAPPS-$gapps_type-arm64.zip"
+              7z a "$name" .
+              curl --upload-file ./$name https://transfer.sh/$name
+            else
+              7z x $(ls | grep "x64") -omain || echo " " >> /dev/null
+              cd main/
+              mv *.img ../../WSAGAScript/#IMAGES
+              cd ../../WSAGAScript/
+              chmod 755 *.sh
+              ./extract_gapps_pico.sh
+              sudo ./extend_and_mount_images.sh
+              sudo ./apply.sh
+              sudo ./unmount_images.sh
+              mv \#IMAGES/*.img ../Bundle_Unzip/main/
+              cd ../Bundle_Unzip/main/
+              chmod 777 *.img
+              rm -rf AppxMetadata AppxBlockMap.xml AppxSignature.p7x "[Content_Types].xml"
+              name="WsaRelease-$version-GAPPS-$gapps_type-x64.zip"
+              7z a "$name" .
+              curl --upload-file ./$name https://transfer.sh/$name
+            fi
+    
+
+
+
+            
