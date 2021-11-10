@@ -17,19 +17,20 @@ jobs:
     - name: Workflow Run
       run: |
             git clone https://github.com/WSA-Community/WSAGAScript
-            gapps_type=${{github.event.inputs.gapps_type}}"
+            gapps_type=${{github.event.inputs.gapps_type}} && gapps_type=${gapps_type,,}
             cd WSAGAScript/#GAPPS
+            echo "Installing required packages..."
             sudo apt install axel >> /dev/null 2>&1
             sudo apt install lzip >> /dev/null 2>&1
             echo "Downloading Gapps..."
             #GApps Link searchup through API
-            gapps_url=$(curl 'https://api.opengapps.org/list' | grep -o -P '.{0,85}-x86-11.0-${gapps_type,,}-.{0,12}' | grep '.zip' | tail -n1) && gapps_url=${gapps_url##*\"}
-            axel -a -n 10 "$gapps_url"
+            gapps_url=$(curl 'https://api.opengapps.org/list' | grep -o -P ".{0,85}-x86-11.0-$gapps_type-.{0,12}" | grep '.zip' | tail -n1 ) && gapps_url=${gapps_url##*\"}
+            axel -a -n 10 "$gapps_url" >> /dev/null 2>&1
             cd ../..
             #WSA Bundle Link searchup through API
             echo "Downloading WSA Bundle..."
             msix_url=$(curl 'https://store.rg-adguard.net/api/GetFiles' --data-raw 'type=ProductId&url=9P3395VX91NR&ring=WIS&lang=en-US'   --compressed | grep ".msixbundle") &&  msix_url=${msix_url##*href\=\"} && msix_url=${msix_url%\" rel*}
-            axel -a -n 10 "$msix_url"
+            axel -a -n 10 "$msix_url" >> /dev/null 2>&1
             version=$(ls | grep "Msixbundle")
             version=${version##*Android_}
             version=${version%_neutral*}
