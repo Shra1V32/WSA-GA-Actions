@@ -2,15 +2,14 @@ name: WSA-GA-Actions
 on:
  workflow_dispatch:
   inputs:
-    msixbundle_url:
-      description: 'Enter the URL of your Msix Bundle'     
+    gapps_type:
+      description: 'Select your GAPPS Type (Super, Stock, Full, Mini, Micro, Nano, Pico, Tvstock, TvMini)'
       required: true
-    gapps_url:
-      description: 'Enter your GApps URL (Make sure you choose from the correct architecture)'
-      required: true
+      default: 'Pico'
     architecture:
       description: 'Your Windows Architecture (x64 is the default, if ARM64 then write "arm64" here) '
-      required: false
+      required: true
+      default: 'x64'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,18 +17,19 @@ jobs:
     - name: Workflow Run
       run: |
             git clone https://github.com/WSA-Community/WSAGAScript
+            gapps_type=${{github.event.inputs.gapps_type}}"
             cd WSAGAScript/#GAPPS
             sudo apt install axel >> /dev/null 2>&1
+            sudo apt install lzip >> /dev/null 2>&1
             echo "Downloading Gapps..."
-            axel -n 10 "${{ github.event.inputs.gapps_url }}" >> /dev/null 2>&1
-            gapps_type=$(ls | grep "gapps")
-            gapps_type=${gapps_type##*11.0-}
-            gapps_type=${gapps_type%-*}
-            cd ..
-            sudo apt install lzip
-            cd ..
+            #GApps Link searchup through API
+            gapps_url=$(curl 'https://api.opengapps.org/list' | grep -o -P '.{0,85}-x86-11.0-${gapps_type,,}-.{0,12}' | grep '.zip' | tail -n1) && gapps_url=${gapps_url##*\"}
+            axel -a -n 10 "$gapps_url"
+            cd ../..
+            #WSA Bundle Link searchup through API
             echo "Downloading WSA Bundle..."
-            axel -n 10 "${{ github.event.inputs.msixbundle_url }}" >> /dev/null 2>&1
+            msix_url=$(curl 'https://store.rg-adguard.net/api/GetFiles' --data-raw 'type=ProductId&url=9P3395VX91NR&ring=WIS&lang=en-US'   --compressed | grep ".msixbundle") &&  msix_url=${msix_url##*href\=\"} && msix_url=${msix_url%\" rel*}
+            axel -a -n 10 "$msix_url"
             version=$(ls | grep "Msixbundle")
             version=${version##*Android_}
             version=${version%_neutral*}
@@ -51,7 +51,7 @@ jobs:
               cd ../Bundle_Unzip/main/
               chmod 777 *.img
               rm -rf AppxMetadata AppxBlockMap.xml AppxSignature.p7x "[Content_Types].xml"
-              name="WsaRelease-$version-GAPPS-$gapps_type-arm64.zip"
+              name="WsaRelease-$version-GAPPS-${gapps_type,,}-arm64.zip"
               7z a "$name" .
               curl --upload-file ./$name https://transfer.sh/$name
             else
@@ -68,7 +68,7 @@ jobs:
               cd ../Bundle_Unzip/main/
               chmod 777 *.img
               rm -rf AppxMetadata AppxBlockMap.xml AppxSignature.p7x "[Content_Types].xml"
-              name="WsaRelease-$version-GAPPS-$gapps_type-x64.zip"
+              name="WsaRelease-$version-GAPPS-${gapps_type,,}-x64.zip"
               7z a "$name" .
               curl --upload-file ./$name https://transfer.sh/$name
             fi
