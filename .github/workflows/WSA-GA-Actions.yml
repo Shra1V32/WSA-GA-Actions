@@ -19,7 +19,7 @@ jobs:
             git clone https://github.com/WSA-Community/WSAGAScript
             gapps_type=${{github.event.inputs.gapps_type}} && gapps_type=${gapps_type,,}
             arch="${{github.event.inputs.architecture}}"
-            if [ ${arch,,} == 'x64' ]; then arch='x86_64' fi
+            if [ ${arch,,} == 'x64' ]; then arch='x86_64'; fi
             cd WSAGAScript/#GAPPS
             echo "Installing required packages..."
             sudo apt install axel >> /dev/null 2>&1
