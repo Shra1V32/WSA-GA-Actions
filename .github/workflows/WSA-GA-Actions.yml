@@ -18,13 +18,15 @@ jobs:
       run: |
             git clone https://github.com/WSA-Community/WSAGAScript
             gapps_type=${{github.event.inputs.gapps_type}} && gapps_type=${gapps_type,,}
+            arch="${{github.event.inputs.architecture}}"
+            if [ ${arch,,} == 'x64' ]; then arch='x86_64' fi
             cd WSAGAScript/#GAPPS
             echo "Installing required packages..."
             sudo apt install axel >> /dev/null 2>&1
             sudo apt install lzip >> /dev/null 2>&1
             echo "Downloading Gapps..."
             #GApps Link searchup through API
-            gapps_url=$(curl 'https://api.opengapps.org/list' | grep -o -P ".{0,85}-x86-11.0-$gapps_type-.{0,12}" | grep '.zip' | tail -n1 ) && gapps_url=${gapps_url##*\"}
+            gapps_url=$(curl 'https://api.opengapps.org/list' | grep -o -P ".{0,85}-${arch,,}-11.0-$gapps_type-.{0,12}" | grep '.zip' | tail -n1 ) && gapps_url=${gapps_url##*\"}
             axel -a -n 10 "$gapps_url" >> /dev/null 2>&1
             cd ../..
             #WSA Bundle Link searchup through API
@@ -36,7 +38,6 @@ jobs:
             version=${version%_neutral*}
             7z x $(ls | grep "Msixbundle") -oBundle_Unzip || echo " " >> /dev/null
             cd Bundle_Unzip/
-            arch="${{github.event.inputs.architecture}}"
             if [ "${arch,,}" == "arm64" ]; then
               7z x $(ls | grep "ARM64") -omain || echo " " >> /dev/null
               cd main/
