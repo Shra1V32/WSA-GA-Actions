@@ -10,6 +10,15 @@ This repository is for creating a Wsa Package with your own desired GApps automa
 * Then Tap on Run Workflow and you'll see that there will be workflow being run.
 * Once the Workflow completes successfully, Check the logs  and scroll all the way to the bottom, You'll see that there will be a file uploaded with the link starting with transfer.sh. And that's it there you go.
 
+## How to install?
+* Extract the downloaded zip, And Open PowerShell as Administrator
+* Run the below command
+```text
+cd <Your extracted WSA directory here>
+Add-AppxPackage -Register AppxManifest.xml
+```
+* And the installation will be done
+
 Please do star my repo, If you've really liked my work :)
 
 ## Credits
