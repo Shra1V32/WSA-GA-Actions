@@ -16,7 +16,7 @@ jobs:
     steps:
     - name: Workflow Run
       run: |
-            git clone https://github.com/Nageshwar128/WSAGAScript
+            git clone https://github.com/Shra1V32/WSAGAScript
             gapps_type=${{github.event.inputs.gapps_type}} && gapps_type=${gapps_type,,}
             arch="${{github.event.inputs.architecture}}"
             if [ ${arch,,} == 'x64' ]; then arch='x86_64'; fi
